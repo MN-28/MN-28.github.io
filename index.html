@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pennywise - Financial, Tax & Benefits Reconciliation Engine</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bg-brand-gradient {
+            background: linear-gradient(135deg, #1D519D 0%, #32BDC2 100%);
+        }
+        .text-brand-gradient {
+            background: linear-gradient(135deg, #1D519D 0%, #32BDC2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gauge-needle {
+            transform-origin: bottom center;
+            transition: transform 1s ease-in-out;
+        }
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+        }
+        .pt-safe {
+            padding-top: env(safe-area-inset-top, 0.5rem);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-white pb-20 md:pb-0">
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-7xl w-full mx-auto px-3 sm:px-4 py-3 flex-1 flex flex-col md:flex-row gap-4">
+
+        <!-- DESKTOP SIDEBAR -->
+        <aside class="hidden md:flex w-64 bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 flex-col justify-between shrink-0">
+            <div>
+                <div class="flex items-center mb-5 px-2 py-1">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center">
+                        <img src="Blue and Yellow Logo.png" alt="Pennywise Logo" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-black text-[#1d519d] tracking-tight">ennywise</h1>
+                    </div>
+                </div>
+
+                <nav class="space-y-1.5" id="main-nav">
+                    <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-50">
+                        <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button onclick="switchTab('income')" id="nav-income" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-50">
+                        <i class="fa-solid fa-wallet w-5 text-center"></i>
+                        <span>Income & Banking</span>
+                    </button>
+                    <button onclick="switchTab('tax')" id="nav-tax" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-50">
+                        <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i>
+                        <span>HMRC Tax Records</span>
+                    </button>
+                    <button onclick="switchTab('insights')" id="nav-insights" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-50">
+                        <i class="fa-solid fa-magnifying-glass-chart w-5 text-center"></i>
+                        <span>Reconciliation</span>
+                        <span id="reconcile-badge" class="ml-auto bg-amber-100 text-amber-800 font-bold text-[11px] px-2 py-0.5 rounded-full">1 Issue</span>
+                    </button>
+                    <!-- NEW: HMRC BENEFITS TAB -->
+                    <button onclick="switchTab('benefits')" id="nav-benefits" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-50">
+                        <i class="fa-solid fa-hand-holding-dollar w-5 text-center text-teal-600"></i>
+                        <span>Benefits & Entitlements</span>
+                        <span class="ml-auto bg-emerald-100 text-emerald-800 font-bold text-[10px] px-2 py-0.5 rounded-full">£2,000 Available</span>
+                    </button>
+                    <button onclick="switchTab('assistant')" id="nav-assistant" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-50">
+                        <i class="fa-solid fa-robot w-5 text-center"></i>
+                        <span>Pennywise AI</span>
+                    </button>
+                    <button onclick="switchTab('settings')" id="nav-settings" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-600 hover:bg-slate-50">
+                        <i class="fa-solid fa-sliders w-5 text-center"></i>
+                        <span>Integrations</span>
+                    </button>
+                </nav>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-100">
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 text-xs space-y-2">
+                    <div class="flex items-center justify-between text-slate-500">
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Starling Engine</span></span>
+                        <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Connected</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-500">
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>HMRC Sandbox</span></span>
+                        <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Synced</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 space-y-4 overflow-hidden">
+
+            <!-- MOBILE APP HEADER -->
+            <div class="flex md:hidden items-center justify-between bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <div class="flex items-center space-x-0.5">
+                     <div class="w-10 h-10 rounded-xl flex items-center justify-center">
+                        <img src="Blue and Yellow Logo (1).svg" alt="Pennywise Logo" class="w-full h-full object-contain">
+                    </div>
+                    <div class="pl--2">
+                        <h1 class="text-xl font-black text-[#1d519d] tracking-tight">ennywise</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">Live Sync</span>
+                </div>
+            </div>
+
+            <!-- PAGE 1: DASHBOARD VIEW -->
+            <div id="page-dashboard" class="space-y-4">
+                <!-- Salary Alert Banner -->
+                <div id="salary-alert-banner" class="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500"></div>
+                    <div class="flex items-start space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                            <i class="fa-solid fa-triangle-exclamation text-base"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-bold text-slate-900 text-sm">Your take-home pay has changed</h3>
+                                <span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase">Alert</span>
+                            </div>
+                            <p class="text-xs text-slate-600 mt-1 leading-snug">
+                                Latest salary received: <span class="font-bold text-slate-900">£2,260</span> (<span class="font-bold text-amber-700">£140 less</span> than last month).
+                            </p>
+                        </div>
+                    </div>
+                    <button onclick="goToStep(2)" class="w-full sm:w-auto bg-brand-gradient text-white font-semibold text-xs px-3.5 py-2.5 rounded-xl shadow shrink-0 flex items-center justify-center space-x-2">
+                        <span>Find out what changed</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Unclaimed Benefits Teaser Banner -->
+                <div class="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200/80 rounded-2xl p-3.5 flex items-center justify-between shadow-2xs">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-hands-holding-child text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-xs">Unclaimed HMRC Benefit Detected</h4>
+                            <p class="text-[11px] text-slate-600">Your Starling bank activity indicates eligibility for <span class="font-bold text-teal-700">Tax-Free Childcare (£1,080/yr)</span>.</p>
+                        </div>
+                    </div>
+                    <button onclick="switchTab('benefits')" class="bg-teal-600 hover:bg-teal-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shrink-0">
+                        View Benefits
+                    </button>
+                </div>
+
+                <!-- Financial Metric Overview Cards Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Latest Pay (May)</span>
+                        <div class="text-lg font-black text-slate-900 mt-1">£2,260</div>
+                        <span class="text-[10px] font-bold text-red-500 bg-red-50 px-1 py-0.5 rounded mt-1 inline-block">-£140 (-5.8%)</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tax Deducted YTD</span>
+                        <div class="text-lg font-black text-slate-900 mt-1">£1,840</div>
+                        <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded mt-1 inline-block">HMRC Verified</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">National Insurance</span>
+                        <div class="text-lg font-black text-slate-900 mt-1">£1,320</div>
+                        <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1 py-0.5 rounded mt-1 inline-block">Category A</span>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pension Contribution</span>
+                        <div class="text-lg font-black text-slate-900 mt-1">£750</div>
+                        <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded mt-1 inline-block">+£100 in May</span>
+                    </div>
+                </div>
+
+                <!-- Monthly Salary Chart & Gauge -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div class="lg:col-span-2 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-sm font-bold text-slate-900">Salary History</h2>
+                                <p class="text-[11px] text-slate-400">Net Deposit vs Gross HMRC</p>
+                            </div>
+                            <div class="flex items-center space-x-2 text-[10px]">
+                                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block mr-1"></span>Net</span>
+                                <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-800 inline-block mr-1"></span>Gross</span>
+                            </div>
+                        </div>
+                        <div class="h-48 mt-3 relative">
+                            <canvas id="salaryHistoryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Tax Health Indicator Card -->
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-sm font-bold text-slate-900">Tax Health Gauge</h2>
+                                <span class="text-[10px] text-slate-400">RTI Status</span>
+                            </div>
+                            <div class="relative flex flex-col items-center justify-center my-3">
+                                <div class="w-40 h-20 overflow-hidden relative">
+                                    <div class="w-40 h-40 rounded-full border-[14px] border-slate-100 border-t-emerald-500 border-r-amber-400 border-b-rose-500 border-l-emerald-500 rotate-[-45deg]"></div>
+                                    <div id="gauge-needle" class="gauge-needle absolute bottom-0 left-1/2 -ml-1 w-2 h-16 bg-slate-800 rounded-t-full transition-all duration-1000 transform origin-bottom rotate-[25deg]">
+                                        <div class="w-3.5 h-3.5 rounded-full bg-slate-900 -ml-0.8 mt-12 shadow"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-center">
+                                    <span id="gauge-status-text" class="inline-block bg-amber-100 text-amber-800 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                        Worth Checking
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="goToStep(3)" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-xl transition text-center">
+                            Inspect Discrepancy
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 2: INCOME LOG -->
+            <div id="page-income" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-900">Starling Bank Engine</h2>
+                            <p class="text-[11px] text-slate-400">Incoming Salary & Family Transactions</p>
+                        </div>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Live API</span>
+                    </div>
+
+                    <div class="overflow-x-auto mt-3">
+                        <table class="w-full text-left border-collapse min-w-[320px]">
+                            <thead>
+                                <tr class="text-[10px] font-bold text-slate-400 uppercase border-b border-slate-100">
+                                    <th class="py-2 px-2">Date</th>
+                                    <th class="py-2 px-2">Ref / Merchant</th>
+                                    <th class="py-2 px-2 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-xs divide-y divide-slate-100">
+                                <tr class="bg-amber-50/60">
+                                    <td class="py-2.5 px-2 font-semibold">28 May 2026</td>
+                                    <td class="py-2.5 px-2 text-slate-500 font-mono text-[10px]">SALARY-MAY</td>
+                                    <td class="py-2.5 px-2 text-right font-extrabold text-slate-900">£2,260.00</td>
+                                </tr>
+                                <tr class="bg-teal-50/40">
+                                    <td class="py-2.5 px-2 font-semibold">15 May 2026</td>
+                                    <td class="py-2.5 px-2 text-slate-700 font-medium text-[11px]">Kiddies Day Nursery</td>
+                                    <td class="py-2.5 px-2 text-right font-bold text-rose-600">-£450.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2.5 px-2 font-semibold">28 Apr 2026</td>
+                                    <td class="py-2.5 px-2 text-slate-500 font-mono text-[10px]">SALARY-APR</td>
+                                    <td class="py-2.5 px-2 text-right font-extrabold text-slate-900">£2,400.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 text-xs">
+                        <h3 class="font-bold text-slate-900 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-building-columns text-cyan-600"></i>
+                            <span>Starling Bank Record</span>
+                        </h3>
+                        <div class="flex justify-between py-1 border-b text-[11px]"><span class="text-slate-500">April Deposit:</span><span class="font-bold">£2,400</span></div>
+                        <div class="flex justify-between py-1 border-b text-[11px]"><span class="text-slate-500">May Deposit:</span><span class="font-bold">£2,260</span></div>
+                        <div class="flex justify-between py-1 font-bold text-red-600 text-[11px]"><span>Net Difference:</span><span>-£140 (-5.8%)</span></div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 text-xs">
+                        <h3 class="font-bold text-slate-900 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-landmark text-indigo-600"></i>
+                            <span>HMRC RTI Record</span>
+                        </h3>
+                        <div class="flex justify-between py-1 border-b text-[11px]"><span class="text-slate-500">Gross Salary:</span><span class="font-bold">£3,200/mo</span></div>
+                        <div class="flex justify-between py-1 border-b text-[11px]"><span class="text-slate-500">Tax Code:</span><span class="font-bold">1257L</span></div>
+                        <div class="flex justify-between py-1 font-bold text-emerald-600 text-[11px]"><span>Gross Change:</span><span>No change</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 3: TAX RECORDS VIEW -->
+            <div id="page-tax" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+                    <h2 class="text-sm font-bold text-slate-900 border-b pb-2">HMRC PAYE Tax Summary</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Tax Code Status</p>
+                            <p class="text-xl font-black text-slate-900 mt-1">1257L</p>
+                            <p class="text-[10px] text-slate-500">Personal Allowance: £12,570</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Effective Tax Rate</p>
+                            <p class="text-xl font-black text-slate-900 mt-1">12.1%</p>
+                            <p class="text-[10px] text-slate-500">Basic Rate (20%)</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">NI Category</p>
+                            <p class="text-xl font-black text-slate-900 mt-1">Cat A</p>
+                            <p class="text-[10px] text-slate-500">8% Class 1 Primary</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 4: INSIGHTS & RECONCILIATION ENGINE -->
+            <div id="page-insights" class="hidden space-y-4">
+                <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                        <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Variance Detected
+                        </span>
+                        <span class="bg-emerald-500/20 text-emerald-300 font-bold text-[10px] px-2 py-0.5 rounded-full">98% Match</span>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black">Net Pay Reduction: -£140.00</h3>
+                        <p class="text-xs text-slate-300 mt-0.5">May 2026 bank deposit vs April 2026 bank deposit</p>
+                    </div>
+                    <button onclick="goToStep(4)" class="w-full bg-amber-400 text-slate-900 font-bold text-xs py-2.5 rounded-xl shadow text-center">
+                        Explain with Pennywise AI
+                    </button>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-500">Root Cause Engine</h4>
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/60 text-xs space-y-1">
+                        <p class="font-bold text-amber-900"><i class="fa-solid fa-circle-check mr-1 text-amber-600"></i> Workplace Pension Rate Increase</p>
+                        <p class="text-amber-800 text-[11px]">Likeliest reason: Auto-enrolment pension contribution adjusted from 3% to 5% (+£100/mo) alongside minor NI adjustment.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 5: NEW HMRC BENEFITS & ENTITLEMENTS VIEW -->
+            <div id="page-benefits" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div>
+                            <h2 class="text-base font-extrabold text-slate-900">Unclaimed HMRC Benefits & Support</h2>
+                            <p class="text-xs text-slate-500">Cross-analyzed using Starling Bank debits & HMRC income verification.</p>
+                        </div>
+                        <span class="bg-teal-100 text-teal-800 text-[10px] font-bold px-2.5 py-1 rounded-full">3 Matches Found</span>
+                    </div>
+
+                    <!-- Benefit Card 1: Tax-Free Childcare -->
+                    <div class="p-4 bg-teal-50/70 border border-teal-200/80 rounded-xl space-y-2">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-child text-xs"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-xs">Tax-Free Childcare Government Top-Up</h3>
+                                    <p class="text-[10px] text-teal-800 font-semibold">Estimated Value: Up to £2,000 / year</p>
+                                </div>
+                            </div>
+                            <span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full">Eligible</span>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            <strong>Detection:</strong> We identified <span class="font-bold text-slate-900">£450/month</span> in Starling Bank payments to <em>Kiddies Day Nursery</em>, but no government childcare top-ups.
+                        </p>
+                        <div class="bg-white p-2.5 rounded-lg border border-teal-100 text-[11px] text-slate-600 space-y-1">
+                            <div class="flex justify-between"><span>HMRC Annual Income:</span><span class="font-bold">£38,400 (Under £100k limit)</span></div>
+                            <div class="flex justify-between"><span>Potential Monthly Subsidy:</span><span class="font-bold text-emerald-600">+£90.00 / month</span></div>
+                        </div>
+                        <button onclick="askQuestion('How do I claim Tax-Free Childcare?')" class="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-lg transition text-center shadow-xs">
+                            Ask AI How to Claim
+                        </button>
+                    </div>
+
+                    <!-- Benefit Card 2: High Income Child Benefit Charge Warning -->
+                    <div class="p-4 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-2">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-900 text-xs">High Income Child Benefit Charge (HICBC)</h3>
+                                    <p class="text-[10px] text-amber-800 font-semibold">Income Threshold Alert</p>
+                                </div>
+                            </div>
+                            <span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-2 py-0.5 rounded-full">Action Recommended</span>
+                        </div>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            <strong>Insight:</strong> If your annual gross pay increases above <strong>£60,000</strong>, you must repay part of your Child Benefit. Increasing pension contributions via salary sacrifice lowers your adjusted net income to keep 100% of benefit payments.
+                        </p>
+                        <button onclick="askQuestion('How do I avoid High Income Child Benefit Charge?')" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition text-center shadow-xs">
+                            Calculate Pension Sacrifice Offset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 6: AI ASSISTANT -->
+            <div id="page-assistant" class="hidden space-y-3">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col h-[520px] overflow-hidden">
+                    <div class="p-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-7 h-7 rounded-lg bg-brand-gradient flex items-center justify-center text-white text-xs">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <h3 class="font-bold text-xs">Pennywise AI Copilot</h3>
+                        </div>
+                        <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">Grounded Context</span>
+                    </div>
+
+                    <div id="chat-box" class="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-50/50">
+                        <div class="flex items-start space-x-2.5 max-w-full">
+                            <div class="w-7 h-7 rounded-lg bg-brand-gradient flex items-center justify-center text-white text-[10px] shrink-0 mt-0.5">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs text-xs text-slate-700 leading-relaxed space-y-1.5">
+                                <p class="font-semibold text-slate-900">Hello Alex! I've cross-analyzed your bank deposits with official HMRC records and benefits rules.</p>
+                                <p>May deposit: <strong>£2,260</strong> (<strong>£140 lower</strong> than April). How can I help explain this or check entitlement options?</p>
+                            </div>
+                        </div>
+                        <div id="ai-response-container"></div>
+                    </div>
+
+                    <div class="p-2 bg-white border-t border-slate-100 flex items-center space-x-1.5 overflow-x-auto text-[11px] no-scrollbar">
+                        <button onclick="askQuestion('Why did I get paid £140 less?')" class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full shrink-0">"Why £140 less?"</button>
+                        <button onclick="askQuestion('How do I claim Tax-Free Childcare?')" class="bg-teal-100 text-teal-800 font-medium px-2.5 py-1 rounded-full shrink-0">"Claim Tax-Free Childcare?"</button>
+                        <button onclick="askQuestion('How do I avoid High Income Child Benefit Charge?')" class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full shrink-0">"Avoid HICBC Tax?"</button>
+                    </div>
+
+                    <div class="p-2 bg-white border-t border-slate-100 flex items-center space-x-2">
+                        <input id="chat-input" type="text" placeholder="Ask about salary, tax, or benefits..." class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                        <button onclick="sendCustomMessage()" class="bg-brand-gradient text-white font-bold px-3 py-2 rounded-xl text-xs">
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 7: RECOMMENDED ACTIONS -->
+            <div id="page-actionable" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-4">
+                    <div class="border-b border-slate-100 pb-2">
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Step 5: Next Action</span>
+                        <h2 class="text-base font-extrabold text-slate-900 mt-1">Recommended Checklist</h2>
+                    </div>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="flex items-start space-x-2.5 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                            <input type="checkbox" checked class="mt-0.5 w-4 h-4 text-cyan-600 rounded">
+                            <div>
+                                <h4 class="font-bold text-slate-900">Compare Itemised Payslips</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Check pension contribution percentage line items between May and April.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-2.5 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                            <input type="checkbox" checked class="mt-0.5 w-4 h-4 text-cyan-600 rounded">
+                            <div>
+                                <h4 class="font-bold text-slate-900">Verify Payroll Notice</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Contact HR (<span class="font-mono">payroll@acmetechnologies.co.uk</span>) to confirm pension rate adjustment.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-2.5 p-3 bg-teal-50/60 rounded-xl border border-teal-200/80">
+                            <input type="checkbox" class="mt-0.5 w-4 h-4 text-teal-600 rounded">
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-teal-900">Apply for Tax-Free Childcare Top-Up</h4>
+                                <p class="text-[11px] text-teal-800 mt-0.5">Set up an online Childcare account on GOV.UK to receive up to £500/quarter top-up.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="copySummaryReport()" class="w-full bg-slate-900 text-white font-bold text-xs py-2.5 rounded-xl text-center">
+                        <i class="fa-solid fa-copy mr-1"></i> Copy Summary for HR & GOV.UK
+                    </button>
+                </div>
+            </div>
+
+            <!-- PAGE 8: SETTINGS -->
+            <div id="page-settings" class="hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3 text-xs">
+                    <h2 class="text-sm font-bold text-slate-900 border-b pb-2">Integrations Configuration</h2>
+                    <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-slate-900">Starling Bank Engine</p>
+                            <p class="text-[10px] text-slate-500">Live API Webhooks & Nursery Category Tagging</p>
+                        </div>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Connected</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-slate-900">HMRC MTD & Benefits Sandbox</p>
+                            <p class="text-[10px] text-slate-500">RTI PAYE & Childcare Top-Up Engine</p>
+                        </div>
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Active</span>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 px-2 py-1.5 pb-safe shadow-lg">
+        <div class="grid grid-cols-5 text-center">
+            <button onclick="switchTab('dashboard')" id="mob-nav-dashboard" class="flex flex-col items-center justify-center py-1 text-cyan-600 font-bold">
+                <i class="fa-solid fa-chart-pie text-base"></i>
+                <span class="text-[9px] mt-0.5">Home</span>
+            </button>
+            <button onclick="switchTab('income')" id="mob-nav-income" class="flex flex-col items-center justify-center py-1 text-slate-500">
+                <i class="fa-solid fa-wallet text-base"></i>
+                <span class="text-[9px] mt-0.5">Income</span>
+            </button>
+            <button onclick="switchTab('benefits')" id="mob-nav-benefits" class="flex flex-col items-center justify-center py-1 text-slate-500 relative">
+                <i class="fa-solid fa-hand-holding-dollar text-base text-teal-600"></i>
+                <span class="text-[9px] mt-0.5">Benefits</span>
+                <span class="absolute top-0 right-3 w-2 h-2 rounded-full bg-emerald-500"></span>
+            </button>
+            <button onclick="switchTab('assistant')" id="mob-nav-assistant" class="flex flex-col items-center justify-center py-1 text-slate-500">
+                <i class="fa-solid fa-robot text-base"></i>
+                <span class="text-[9px] mt-0.5">AI Copilot</span>
+            </button>
+            <button onclick="switchTab('actionable')" id="mob-nav-actionable" class="flex flex-col items-center justify-center py-1 text-slate-500">
+                <i class="fa-solid fa-list-check text-base"></i>
+                <span class="text-[9px] mt-0.5">Outcome</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- JAVASCRIPT CONTROLLER LOGIC -->
+    <script>
+        let currentStep = 1;
+        let salaryChart = null;
+
+        window.onload = function() {
+            initChart();
+            goToStep(1);
+        };
+
+        function switchTab(tabId) {
+            const pages = ['dashboard', 'income', 'tax', 'insights', 'benefits', 'assistant', 'actionable', 'settings'];
+            
+            pages.forEach(p => {
+                const pageEl = document.getElementById(`page-${p}`);
+                const navEl = document.getElementById(`nav-${p}`);
+                const mobNavEl = document.getElementById(`mob-nav-${p}`);
+                
+                if (pageEl) pageEl.classList.add('hidden');
+                if (navEl) {
+                    navEl.classList.remove('bg-brand-gradient', 'text-white', 'shadow-sm');
+                    navEl.classList.add('text-slate-600');
+                }
+                if (mobNavEl) {
+                    mobNavEl.classList.remove('text-cyan-600', 'font-bold');
+                    mobNavEl.classList.add('text-slate-500');
+                }
+            });
+
+            const activePage = document.getElementById(`page-${tabId}`);
+            if (activePage) activePage.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-600');
+                activeNav.classList.add('bg-brand-gradient', 'text-white', 'shadow-sm');
+            }
+
+            const activeMobNav = document.getElementById(`mob-nav-${tabId}`);
+            if (activeMobNav) {
+                activeMobNav.classList.remove('text-slate-500');
+                activeMobNav.classList.add('text-cyan-600', 'font-bold');
+            }
+        }
+
+        function goToStep(stepNum) {
+            currentStep = stepNum;
+
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`step-btn-${i}`);
+                if (btn) {
+                    if (i === stepNum) {
+                        btn.className = "px-2.5 py-1 rounded-full border border-cyan-400 bg-cyan-600 text-white font-bold text-xs shrink-0 flex items-center space-x-1 shadow";
+                    } else {
+                        btn.className = "px-2.5 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300 text-xs shrink-0 flex items-center space-x-1";
+                    }
+                }
+            }
+
+            switch(stepNum) {
+                case 1:
+                    switchTab('dashboard');
+                    updateGauge('check');
+                    break;
+                case 2:
+                    switchTab('income');
+                    break;
+                case 3:
+                    switchTab('insights');
+                    break;
+                case 4:
+                    switchTab('assistant');
+                    triggerAIPreload();
+                    break;
+                case 5:
+                    switchTab('actionable');
+                    break;
+            }
+        }
+
+        function updateGauge(status) {
+            const needle = document.getElementById('gauge-needle');
+            const statusText = document.getElementById('gauge-status-text');
+            if (status === 'check') {
+                if (needle) needle.style.transform = 'rotate(25deg)';
+                if (statusText) {
+                    statusText.textContent = "Worth Checking";
+                    statusText.className = "inline-block bg-amber-100 text-amber-800 font-bold text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider";
+                }
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('salaryHistoryChart');
+            if (!ctx) return;
+
+            salaryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+                    datasets: [
+                        {
+                            label: 'Net Pay (Bank)',
+                            data: [2400, 2400, 2400, 2400, 2260],
+                            borderColor: '#32BDC2',
+                            backgroundColor: 'rgba(50, 189, 194, 0.1)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Gross (HMRC)',
+                            data: [3200, 3200, 3200, 3200, 3200],
+                            borderColor: '#1D519D',
+                            borderWidth: 1.5,
+                            borderDash: [4, 4],
+                            pointRadius: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            min: 2000,
+                            max: 3500,
+                            ticks: {
+                                callback: function(value) { return '£' + value; },
+                                font: { size: 10 }
+                            },
+                            grid: { color: '#f1f5f9' }
+                        },
+                        x: {
+                            ticks: { font: { size: 10 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function triggerAIPreload() {
+            const container = document.getElementById('ai-response-container');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="space-y-2.5 my-2">
+                    <div class="flex items-start justify-end space-x-2">
+                        <div class="bg-brand-gradient text-white rounded-2xl p-2.5 shadow-2xs text-xs max-w-[85%]">
+                            Why did I get paid £140 less in May?
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-2 max-w-[95%]">
+                        <div class="w-6 h-6 rounded-lg bg-brand-gradient flex items-center justify-center text-white text-[10px] shrink-0 mt-0.5">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs text-xs text-slate-700 leading-relaxed space-y-2">
+                            <div class="flex items-center space-x-1.5 text-amber-700 font-bold border-b pb-1 text-[11px]">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <span>Reconciliation Breakdown</span>
+                            </div>
+                            <p>Here is what the evidence shows between <strong>Starling Bank</strong> and <strong>HMRC RTI</strong>:</p>
+                            <ul class="space-y-1 list-disc list-inside bg-slate-50 p-2 rounded text-[11px] text-slate-800">
+                                <li><strong>HMRC Gross:</strong> £3,200 (Unchanged)</li>
+                                <li><strong>Tax Code:</strong> 1257L (No change)</li>
+                                <li><strong>Likely Cause:</strong> +£100 pension contribution hike (3% to 5%) & minor NI threshold shift.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const chatBox = document.getElementById('chat-box');
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function askQuestion(qText) {
+            switchTab('assistant');
+            document.getElementById('chat-input').value = qText;
+            sendCustomMessage();
+        }
+
+        function sendCustomMessage() {
+            const input = document.getElementById('chat-input');
+            const q = input.value.trim();
+            if (!q) return;
+
+            const container = document.getElementById('ai-response-container');
+            container.insertAdjacentHTML('beforeend', `
+                <div class="flex items-start justify-end space-x-2 my-2">
+                    <div class="bg-brand-gradient text-white rounded-2xl p-2.5 shadow-2xs text-xs max-w-[85%]">${q}</div>
+                </div>
+            `);
+            input.value = '';
+
+            setTimeout(() => {
+                let answer = `Tax code <strong>1257L</strong> gives you £12,570 tax-free allowance. You can review your next steps in Step 5!`;
+                
+                if (q.includes('Childcare')) {
+                    answer = `Based on your Starling Bank nursery debits (£450/mo) and HMRC taxable pay (£38,400/yr), you qualify for <strong>Tax-Free Childcare</strong>. The government top-up pays 20% of your childcare fees up to £2,000/year (£500/quarter).`;
+                } else if (q.includes('Child Benefit') || q.includes('HICBC')) {
+                    answer = `The High Income Child Benefit Charge applies above £60,000 adjusted net income. You can reduce your net income below £60,000 by increasing pre-tax <strong>salary sacrifice pension contributions</strong>, retaining 100% of your Child Benefit while boosting retirement savings!`;
+                }
+
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="flex items-start space-x-2 my-2 max-w-[95%]">
+                        <div class="w-6 h-6 rounded-lg bg-brand-gradient flex items-center justify-center text-white text-[10px] shrink-0 mt-0.5">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs text-xs text-slate-700 leading-relaxed">
+                            ${answer}
+                        </div>
+                    </div>
+                `);
+                const chatBox = document.getElementById('chat-box');
+                if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+            }, 600);
+        }
+
+        function copySummaryReport() {
+            const text = "Pennywise Reconciliation & Benefits Report:\n- Net Pay Variance: -£140.00 (May 2026)\n- HMRC Gross Salary: £3,200 (Unchanged)\n- Eligible HMRC Benefit: Tax-Free Childcare (Up to £2,000/yr)\n- Recommended Action: Check pension rate with HR & apply for Childcare top-up on GOV.UK";
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert("Report copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
